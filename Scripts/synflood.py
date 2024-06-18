@@ -34,7 +34,9 @@ try:
         num_packets = int(num_packets)
 except:
         sys.exit('Invalid number of packets')
-counter = random.randint(0,91)
+
+# these are just values I pulled out of my ass but its ok cuz its just sequence stuff
+counter = random.randint(6,91)
 ceiling = random.randint(100, 1001)
 pkts = []
 
