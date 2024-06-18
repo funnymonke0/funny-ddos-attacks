@@ -37,7 +37,7 @@ except:
 
 # these are just values I pulled out of my ass but its ok cuz its just sequence stuff
 counter = random.randint(6,91)
-ceiling = random.randint(100, 1001)
+ceiling = random.randint(100, 9001)
 pkts = []
 
 proctime = time.process_time()
