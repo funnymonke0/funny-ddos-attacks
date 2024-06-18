@@ -1,7 +1,7 @@
 from scapy.all import *
 import sys
 import time
-import Faker
+from faker import Faker
 
 fake = Faker()
 
