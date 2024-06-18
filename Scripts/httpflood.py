@@ -42,7 +42,7 @@ def makeack(src, dst, synack):
         IPlayer = IP()
         TCPlayer = TCP()
         # payload = f"GET / HTTP/1.1\r\nHost: {dst}\r\nAccept-Encoding: gzip, deflate\r\nUser-Agent: {choice(alist)}\r\n\r\n"
-        payload = f"GET / HTTP/1.1\r\nHost: {dst}\r\n\r\n"
+        payload = f"GET / HTTP/1.1\r\nHost: {dst}\n\n"
         # IPlayer.src = src
         IPlayer.dst = dst
 
