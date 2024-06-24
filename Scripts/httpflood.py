@@ -71,14 +71,15 @@ parser.add_argument(
         '-p',
         help='host port, usually 80 for webservers',
         default=80,
-        type=int,
-        dest='port'
+        dest='port',
+        type=int
         )
 parser.add_argument(
         '-r',
         help='number of requests to send',
-        type=int,
-        dest='packets'
+        default= 1,
+        dest='packets',
+        type=int
         )
 
         
