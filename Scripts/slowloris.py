@@ -108,6 +108,8 @@ def printbox(info, fields):
              infoA.append(field)
          
     print('------------------------------')
+    print('|            Info            |')
+    print('------------------------------')
     print(f'|sockets used:{infoA[0]}|')
     print(f'|target      :{infoA[1]}|')
     print(f'|port        :{infoA[2]}|')
@@ -161,6 +163,7 @@ def iteration(list, args):
     dead = 0
     headers = 0
     failed = 0
+    print('------------Status------------')
     print(f'start of iteration...')
     print(f'sending {len(list)} headers...')
     for i in range(len(list)-1, -1, -1):
