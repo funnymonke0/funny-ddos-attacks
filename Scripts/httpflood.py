@@ -47,13 +47,13 @@ def flood(args):
                 agents = None
 
         for i in range(0, args.packets+1):
-                tempS = time.process_time()
+
                 s = threading.Thread(target= send_socket(args, agents))
                 s.start()
-                tempE = time.process_time()
-                temptimer = tempE-tempS
-                if temptimer != 0:
-                        print(str(round((1/temptimer)*100, 2))+"packets/sec", end='\r')
+
+
+                print(str(round((i/args.packets)*100, 2))+" %" + " done", end='\r')
+                # display(round((i/args.packets)))
                 
         end = time.process_time()
         timer = end-start
@@ -63,6 +63,12 @@ def flood(args):
         else:
                 print(f'Sent {args.packets} instantly')
 
+def display(percentage):
+        bar = percentage*10
+        bar = round(bar)
+        progess = '-'*bar
+        extra = ' '*(10-bar)
+        print(progess+extra+'|', end='\r')
 
 def main():
         parser = argparse.ArgumentParser(description= 'http flooder programmed in python')
